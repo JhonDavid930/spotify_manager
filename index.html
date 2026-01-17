@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Manager V9</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #181818;
+            --card-hover: #222;
+            --primary: #1DB954;
+            --primary-hover: #1ed760;
+            --text-main: #FFFFFF;
+            --text-muted: #B3B3B3;
+            --border: #333;
+            --danger: #e91e63;
+            --info: #2196f3;
+            --type-editorial: #1DB954;
+            --type-algo: #4e91f5;
+            --type-manual: #f5a623;
+            --type-data: #e91429;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: -1px; font-weight: 800; }
+        h1 span { color: var(--primary); }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background-color: var(--card-hover); border-color: white; }
+        .btn-primary { background-color: var(--primary); color: black; border: none; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+        .btn-danger { border-color: var(--danger); color: var(--danger); }
+        .btn-danger:hover { background-color: var(--danger); color: white; }
+
+        /* DASHBOARD & FILTERS */
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto 30px auto;
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+        input, select {
+            background-color: #000;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+        /* GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            will-change: transform;
+            overflow: hidden;
+        }
+        .card:hover { border-color: #444; background-color: var(--card-hover); }
+
+        .type-indicator {
+            position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background-color: var(--type-manual);
+        }
+        .card.type-Editorial .type-indicator { background-color: var(--type-editorial); }
+        .card.type-Algorítmica .type-indicator { background-color: var(--type-algo); }
+        .card.type-Data-Driven .type-indicator { background-color: var(--type-data); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; padding-left: 10px; }
+        
+        .type-badge {
+            font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;
+            margin-bottom: 8px; padding-left: 10px; color: var(--text-muted); display: block;
+        }
+        
+        .card-title { font-size: 1.15rem; font-weight: 700; margin: 0; line-height: 1.2; padding-left: 10px; flex-grow: 1; }
+        
+        .card-actions {
+            display: flex;
+            gap: 5px;
+            min-width: 50px;
+            justify-content: flex-end;
+        }
+
+        .btn-icon {
+            background: transparent; border: none; color: #555; cursor: pointer; padding: 2px;
+            transition: color 0.2s;
+        }
+        .btn-icon:hover { color: var(--text-main); }
+        .btn-icon.delete:hover { color: var(--danger); }
+        .btn-icon.edit:hover { color: var(--info); }
+
+        .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 12px 10px; }
+        .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+        .badge.genre { background: rgba(29, 185, 84, 0.15); color: var(--primary); }
+        .badge.bpm { background: #333; color: #ddd; }
+        .badge.vibe { background: #2a2a2a; color: #aaa; border: 1px solid #333; }
+
+        .card-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; padding-left: 10px; flex-grow: 1; line-height: 1.5; }
+
+        .card-footer { display: flex; gap: 8px; margin-top: auto; padding-left: 10px; }
+
+        .btn-open {
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            flex: 1; background-color: var(--primary); color: black; text-decoration: none;
+            padding: 10px; border-radius: 20px; font-weight: 700; font-size: 0.9rem;
+        }
+        .btn-open:hover { background-color: var(--primary-hover); }
+
+        .btn-copy {
+            width: 42px; display: flex; justify-content: center; align-items: center;
+            background-color: #333; border: none; border-radius: 50%; color: white; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-copy:hover { background-color: #555; }
+        .btn-copy:active { background-color: var(--primary); }
+
+        /* LOAD MORE */
+        .load-more-container { text-align: center; margin: 40px 0; }
+        .btn-load-more {
+            background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);
+            padding: 10px 30px; border-radius: 20px; cursor: pointer; font-size: 0.9rem;
+        }
+        .btn-load-more:hover { border-color: white; color: white; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 100; display: none;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--card-bg); padding: 30px; border-radius: 12px;
+            width: 90%; max-width: 500px; border: 1px solid var(--border);
+        }
+        .form-grid { display: grid; gap: 15px; margin-top: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: var(--primary); color: #000;
+            text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 1000;
+            left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: all 0.3s; font-weight: bold;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        #csvInput { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <h1>Spotify <span>Manager</span></h1>
+            <div class="action-buttons">
+                <button class="btn" onclick="document.getElementById('csvInput').click()">
+                    <i data-lucide="upload" style="width: 16px"></i> Importar
+                </button>
+                <button class="btn" onclick="exportToCSV()">
+                    <i data-lucide="download" style="width: 16px"></i> Exportar
+                </button>
+                <button class="btn btn-primary" onclick="openModal()">
+                    <i data-lucide="plus" style="width: 16px"></i> Nueva
+                </button>
+                <button class="btn btn-danger" onclick="resetDatabase()">
+                    <i data-lucide="trash-2" style="width: 16px"></i> Reset
+                </button>
+            </div>
+        </div>
+        <div id="statsBar" style="color: #888; font-size: 0.9rem;">Inicializando...</div>
+        <input type="file" id="csvInput" accept=".csv" onchange="handleFileUpload(this)">
+    </header>
+
+    <div class="dashboard">
+        <div class="input-group">
+            <label>🔍 Buscar</label>
+            <input type="text" id="searchInput" placeholder="Nombre...">
+        </div>
+        <div class="input-group">
+            <label>📂 Tipo</label>
+            <select id="typeFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="input-group">
+            <label>🎵 Género</label>
+            <select id="genreFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="input-group">
+            <label>⚡ Vibe</label>
+            <select id="vibeFilter"><option value="">Todos</option></select>
+        </div>
+        <div class="input-group">
+            <label>👥 Público</label>
+            <select id="audienceFilter"><option value="">Todos</option></select>
+        </div>
+        <button class="btn" style="height: 42px;" onclick="clearFilters()">Limpiar</button>
+    </div>
+
+    <div id="resultsGrid" class="grid"></div>
+    
+    <div class="load-more-container">
+        <button id="loadMoreBtn" class="btn-load-more" onclick="loadMore()">Mostrar más resultados</button>
+    </div>
+
+    <!-- MODAL (SIRVE PARA AGREGAR Y EDITAR) -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <h2 id="modalTitle" style="margin-top:0; color:var(--primary)">Agregar Playlist</h2>
+            <form id="addForm" onsubmit="handleFormSubmit(event)">
+                <!-- Input oculto para saber si estamos editando -->
+                <input type="hidden" name="editId">
+                
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Nombre</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group"><label>Tipo (Editorial/Algo)</label><input type="text" name="type" placeholder="Editorial"></div>
+                        <div class="input-group"><label>Género</label><input type="text" name="genre" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group"><label>Vibe</label><input type="text" name="vibe" required></div>
+                        <div class="input-group"><label>BPM</label><input type="text" name="bpm"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Público</label>
+                        <input type="text" name="audience">
+                    </div>
+                    <div class="input-group">
+                        <label>Descripción</label>
+                        <input type="text" name="desc">
+                    </div>
+                    <div class="input-group">
+                        <label>Link (Spotify)</label>
+                        <input type="url" name="link" required placeholder="https://open.spotify.com/playlist/...">
+                    </div>
+                    <div class="action-buttons" style="justify-content: flex-end; margin-top: 10px;">
+                        <button type="button" class="btn" onclick="document.getElementById('addModal').classList.remove('open')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">Notificación</div>
+
+    <script>
+        // --- DATA MAESTRA ---
+        const fullInitialData = [
+            {id: "GLO-01", name: "Today's Top Hits", type: "Editorial", genre: "Pop / Global", vibe: "Mainstream", bpm: "100-128", audience: "Gen Z / Millennials", desc: "Los éxitos más grandes del mundo en tiempo real.", link: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"},
+            {id: "GLO-02", name: "New Music Friday", type: "Editorial", genre: "Multigénero", vibe: "Novedades", bpm: "Variado", audience: "Curadores / Fans", desc: "Estrenos destacados de la semana (versión global).", link: "https://open.spotify.com/playlist/37i9dQZF1DX4JAvHpjipBk"},
+            {id: "GLO-03", name: "Viral 50 - Global", type: "Data-Driven", genre: "Viral", vibe: "Tendencias", bpm: "Variado", audience: "Usuarios TikTok / Redes", desc: "Canciones que se están compartiendo viralmente.", link: "https://open.spotify.com/playlist/37i9dQZF1ZEVXBsZw1sF"},
+            {id: "URB-01", name: "Mansión Reggaetón", type: "Editorial", genre: "Reggaetón", vibe: "Mainstream / Hits", bpm: "85-105", audience: "Jóvenes Latinos", desc: "La playlist #1 de música urbana en LATAM. Bad Bunny, Karol G.", link: "https://open.spotify.com/playlist/37i9dQZF1DX8SfyqmSFDwe"},
+            {id: "URB-02", name: "Viva Latino", type: "Editorial", genre: "Latino Global", vibe: "Pop / Urbano", bpm: "90-110", audience: "Audiencia Global", desc: "El hogar de los hits latinos mundiales. Crossover.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva"},
+            {id: "URB-03", name: "Baila Reggaeton", type: "Editorial", genre: "Reggaetón", vibe: "Party / Dembow", bpm: "90-105", audience: "Fiesteros / Gym", desc: "100% bailable. Alta energía para fiestas y gimnasio.", link: "https://open.spotify.com/playlist/37i9dQZF1DWY7IeIP1cdjF"},
+            {id: "URB-04", name: "Reggaetón Classics", type: "Editorial", genre: "Reggaetón", vibe: "Old School / 2000s", bpm: "90-100", audience: "Millennials / Nostalgia", desc: "Los himnos clásicos del género. Daddy Yankee, Don Omar.", link: "https://open.spotify.com/playlist/37i9dQZF1DX8IVY4Wn1hss"},
+            {id: "URB-05", name: "Perreo City", type: "Editorial", genre: "Urbano", vibe: "Underground / Club", bpm: "85-95", audience: "Gen Z / Clubbers", desc: "Sonido más oscuro y duro. Feid, Bellakath.", link: "https://open.spotify.com/playlist/37i9dQZF1DWYp5sMf7tZKp"},
+            {id: "URB-06", name: "Trap Latino", type: "Editorial", genre: "Trap", vibe: "Hip-Hop / Calle", bpm: "130-150", audience: "Fans Hip-Hop", desc: "BPM lento y bajos pesados. Anuel AA, Eladio Carrión.", link: "https://open.spotify.com/playlist/37i9dQZF1DX3bS3V1A3iIq"},
+            {id: "URB-07", name: "Flow Tranqui", type: "Editorial", genre: "Urbano", vibe: "Chill / R&B", bpm: "80-95", audience: "Relax / Estudio", desc: "El lado suave y melódico del género urbano.", link: "https://open.spotify.com/playlist/37i9dQZF1DX9O8X9j6G4X1"},
+            {id: "MEX-01", name: "La Reina", type: "Editorial", genre: "Música Mexicana", vibe: "Regional / Hits", bpm: "Variado", audience: "Fans Regional", desc: "La lista insignia. Banda, Norteño y Mariachi mezclados.", link: "https://open.spotify.com/playlist/37i9dQZF1DX905zIRtblN3"},
+            {id: "MEX-02", name: "Corridos Tumbados", type: "Editorial", genre: "Corridos", vibe: "Trap / Urbano", bpm: "100-130", audience: "Gen Z / Urbano", desc: "Fusión de tradición y trap. Natanael Cano, Peso Pluma.", link: "https://open.spotify.com/playlist/37i9dQZF1DX5X2MdaCO59T"},
+            {id: "MEX-03", name: "Banda", type: "Editorial", genre: "Banda", vibe: "Sinaloense / Fiesta", bpm: "110-140", audience: "Fiesta Tradicional", desc: "Sonido de viento y tambora. Banda MS, El Recodo.", link: "https://open.spotify.com/playlist/37i9dQZF1DX5c9vXbXae2k"},
+            {id: "MEX-04", name: "Norteño", type: "Editorial", genre: "Norteño", vibe: "Acordeón / Frontera", bpm: "100-120", audience: "Adultos / Norte", desc: "Historias clásicas del norte. Los Tigres del Norte.", link: "https://open.spotify.com/playlist/37i9dQZF1DX0S3aX4d3bVf"},
+            {id: "MEX-05", name: "Sad Sierreño", type: "Editorial", genre: "Sierreño", vibe: "Triste / Acústico", bpm: "80-100", audience: "Adolescentes / Sad", desc: "Guitarras melancólicas para el desamor (Sad Cuh).", link: "https://open.spotify.com/playlist/37i9dQZF1DX7Q7o9K9Y3s4"},
+            {id: "MEX-06", name: "La Troca", type: "Editorial", genre: "Regional", vibe: "Carretera / Viaje", bpm: "110-120", audience: "Conductores", desc: "Música para conducir camionetas y viajes largos.", link: "https://open.spotify.com/playlist/37i9dQZF1DX3JPc5y30Vdb"},
+            {id: "TROP-01", name: "Salsa Nation", type: "Editorial", genre: "Salsa", vibe: "Tropical / Baile", bpm: "160-200", audience: "Bailadores / Salseros", desc: "El destino global para la salsa de todas las épocas.", link: "https://open.spotify.com/playlist/37i9dQZF1DX7SeoIaFy0PH"},
+            {id: "TROP-02", name: "Bachata Lovers", type: "Editorial", genre: "Bachata", vibe: "Romántico / Baile", bpm: "120-130", audience: "Parejas / Románticos", desc: "Romeo Santos y Aventura. Pasión y baile.", link: "https://open.spotify.com/playlist/37i9dQZF1DX9I68xBN3b0u"},
+            {id: "TROP-03", name: "Cumbia Sonidera", type: "Editorial", genre: "Cumbia", vibe: "México / Synth", bpm: "90-105", audience: "Barrio / Popular", desc: "Estilo sonidero con saludos y bajos rebajados.", link: "https://open.spotify.com/playlist/37i9dQZF1DX6ThddIJwuGT"},
+            {id: "TROP-04", name: "Esto es Cumbia", type: "Editorial", genre: "Cumbia", vibe: "Argentina / Villera", bpm: "85-100", audience: "Cono Sur / Barrio", desc: "Cumbia del Cono Sur, Villera y RKT.", link: "https://open.spotify.com/playlist/37i9dQZF1DWW96I8co90bf"},
+            {id: "TROP-05", name: "Tropical Favorites", type: "Editorial", genre: "Tropical", vibe: "Variado", bpm: "110-130", audience: "Familia / Eventos", desc: "Mix de merengue, vallenato y sonidos caribeños.", link: "https://open.spotify.com/playlist/37i9dQZF1DX0W1Xf3dcfXm"},
+            {id: "ROCK-01", name: "Rock en Español", type: "Editorial", genre: "Rock", vibe: "Clásicos / Himnos", bpm: "100-140", audience: "Gen X / Millennials", desc: "Soda Stereo, Caifanes. El canon del rock latino.", link: "https://open.spotify.com/playlist/37i9dQZF1DXdfOcg1fm0VG"},
+            {id: "ROCK-02", name: "Inoxidables", type: "Editorial", genre: "Pop/Rock", vibe: "Nostalgia / 80s-90s", bpm: "Variado", audience: "Adulto Contemporáneo", desc: "Canciones que no envejecen. Hits atemporales.", link: "https://open.spotify.com/playlist/37i9dQZF1DX7QOvUqw3Wf6"},
+            {id: "ROCK-03", name: "Latin Pop Classics", type: "Editorial", genre: "Pop", vibe: "90s / 00s", bpm: "95-125", audience: "Millennials", desc: "La era dorada del pop: Shakira, Ricky Martin, Juanes.", link: "https://open.spotify.com/playlist/37i9dQZF1DX2951Yq2K7aX"},
+            {id: "HIP-01", name: "RapCaviar", type: "Editorial", genre: "Hip-Hop", vibe: "Hype / Mainstream", bpm: "130-160", audience: "Hip-Hop Heads", desc: "La playlist de Hip-Hop más influyente del mundo.", link: "https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd"},
+            {id: "MOOD-01", name: "Mood Booster", type: "Editorial", genre: "Pop", vibe: "Alegre / Optimista", bpm: "110-130", audience: "Universal", desc: "Para subir el ánimo rápidamente.", link: "https://open.spotify.com/playlist/37i9dQZF1DX3rxVfibe1L0"},
+            {id: "MOOD-02", name: "Sad Indie", type: "Editorial", genre: "Indie", vibe: "Melancólico / Lento", bpm: "60-90", audience: "Introvertidos", desc: "Para momentos de tristeza y reflexión.", link: "https://open.spotify.com/playlist/37i9dQZF1DWVV27DiNWxkR"},
+            {id: "MOOD-03", name: "Deep Focus", type: "Editorial", genre: "Instrumental", vibe: "Concentración", bpm: "Ambient", audience: "Estudiantes / Oficina", desc: "Post-rock y ambiental para trabajar/estudiar.", link: "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ"},
+            {id: "MOOD-04", name: "Sleep", type: "Editorial", genre: "Ambiental", vibe: "Sueño / Relax", bpm: "<60", audience: "Insomnes", desc: "Sonidos suaves para dormir.", link: "https://open.spotify.com/playlist/37i9dQZF1DWZd79rJ6a7lp"},
+            {id: "ACT-01", name: "Beast Mode", type: "Editorial", genre: "Variado", vibe: "Alta Energía", bpm: "130-150", audience: "Gym / Crossfit", desc: "Entrenamiento intenso y pesas.", link: "https://open.spotify.com/playlist/37i9dQZF1DX76Wlfdnj7AP"},
+            {id: "ACT-02", name: "Run N Bass", type: "Editorial", genre: "Drum & Bass", vibe: "Running", bpm: "170-175", audience: "Runners", desc: "Running de alta cadencia.", link: "https://open.spotify.com/playlist/37i9dQZF1DX35X4JNyBWtb"},
+            {id: "DEC-01", name: "All Out 80s", type: "Editorial", genre: "Pop / Rock", vibe: "Nostalgia 80s", bpm: "100-130", audience: "Gen X", desc: "Los mayores éxitos de la década de 1980.", link: "https://open.spotify.com/playlist/37i9dQZF1DX4UtSsGT1Sbe"},
+            {id: "DEC-02", name: "All Out 90s", type: "Editorial", genre: "Variado", vibe: "Nostalgia 90s", bpm: "90-120", audience: "Millennials", desc: "Los mayores éxitos de la década de 1990.", link: "https://open.spotify.com/playlist/37i9dQZF1DXbTxeAdrVG2l"},
+            {id: "DEC-03", name: "All Out 2000s", type: "Editorial", genre: "Pop / R&B", vibe: "Nostalgia 2000s", bpm: "90-130", audience: "Millennials / Gen Z", desc: "Los mayores éxitos de la década de 2000.", link: "https://open.spotify.com/playlist/37i9dQZF1DX4o1oenSJRJd"},
+            {id: "NICHE-01", name: "Hyperpop", type: "Editorial", genre: "Hyperpop", vibe: "Caótico / Digital", bpm: "140+", audience: "Nicho Internet", desc: "100 gecs, Charli XCX. Sonidos de internet.", link: "https://open.spotify.com/playlist/37i9dQZF1DX7HOk71GPfSw"},
+            {id: "NICHE-02", name: "Phonk", type: "Editorial", genre: "Phonk", vibe: "Drift / Distorsión", bpm: "120-140", audience: "Gamers / Gym", desc: "Popular en la cultura de coches y gimnasio.", link: "https://open.spotify.com/playlist/37i9dQZF1DWWY64wDtewQt"},
+            {id: "ELEC-01", name: "Mint", type: "Editorial", genre: "Electrónica", vibe: "EDM / Dance", bpm: "120-128", audience: "Fiesteros / Festivales", desc: "Los mayores hits de la música electrónica mundial.", link: "https://open.spotify.com/playlist/37i9dQZF1DX4dyzvYTZMcP"},
+            {id: "ELEC-02", name: "Housewerk", type: "Editorial", genre: "House", vibe: "Club / Vocal", bpm: "120-126", audience: "Clubbers / Gym", desc: "House moderno y bajos contundentes.", link: "https://open.spotify.com/playlist/37i9dQZF1DXa8NOEUWPn9W"},
+            {id: "ASIA-01", name: "K-Pop On!", type: "Editorial", genre: "K-Pop", vibe: "Global / Hits", bpm: "Variado", audience: "Gen Z / Stans", desc: "Lo más grande de Corea para el mundo.", link: "https://open.spotify.com/playlist/37i9dQZF1DX9tPFwDMOaN1"},
+            {id: "RNB-01", name: "Are & Be", type: "Editorial", genre: "R&B", vibe: "Soul / Moderno", bpm: "60-100", audience: "Sofisticado / Relax", desc: "El pulso del R&B actual. The Weeknd, SZA.", link: "https://open.spotify.com/playlist/37i9dQZF1DX4SBhb3fqCJd"},
+            {id: "MOOD-05", name: "Lofi Beats", type: "Editorial", genre: "Lofi", vibe: "Estudio / Chill", bpm: "70-90", audience: "Estudiantes / Coders", desc: "Beats instrumentales suaves para concentrarse.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva4"},
+            {id: "MOOD-06", name: "Jazz Vibes", type: "Editorial", genre: "Jazz", vibe: "Cena / Lounge", bpm: "Variado", audience: "Adultos / Elegante", desc: "Jazz suave para momentos tranquilos y cenas.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva5"},
+            {id: "GLO-04", name: "African Heat", type: "Editorial", genre: "Afrobeats", vibe: "Urbano / Baile", bpm: "95-115", audience: "Global / Urbano", desc: "El sonido que domina desde Nigeria y África.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva6"},
+            {id: "ROCK-04", name: "Rock This", type: "Editorial", genre: "Rock", vibe: "Moderno / Alt", bpm: "120-150", audience: "Gen Z / Millennials", desc: "Rock moderno y alternativo actual.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva8"},
+            {id: "ROCK-05", name: "Kickass Metal", type: "Editorial", genre: "Metal", vibe: "Heavy / Intense", bpm: "140+", audience: "Metalheads / Gym", desc: "Para descargar ira o entrenar muy pesado.", link: "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva9"},
+            {id: "ALGO-01", name: "Discover Weekly", type: "Algorítmica", genre: "Algorítmica", vibe: "Descubrimiento", bpm: "Dinámico", audience: "Personal", desc: "30 canciones nuevas cada lunes según tu gusto.", link: "https://open.spotify.com/genre/discovery-web"},
+            {id: "ALGO-02", name: "Release Radar", type: "Algorítmica", genre: "Algorítmica", vibe: "Novedades", bpm: "Dinámico", audience: "Personal", desc: "Estrenos de artistas que sigues (viernes).", link: "https://open.spotify.com/genre/discovery-web"},
+            {id: "ALGO-03", name: "On Repeat", type: "Algorítmica", genre: "Algorítmica", vibe: "Frecuente", bpm: "Dinámico", audience: "Personal", desc: "Lo que más has escuchado en los últimos 30 días.", link: "https://open.spotify.com/genre/made-for-x-hub"},
+            {id: "ALGO-04", name: "Daylist", type: "Algorítmica", genre: "Algorítmica", vibe: "Dinámico", bpm: "Dinámico", audience: "Contextual", desc: "Cambia según la hora del día y tu vibra.", link: "https://open.spotify.com/playlist/37i9dQZF1EP6YuccxElqXq"},
+            {id: "ALGO-05", name: "Spotify Mixes", type: "Algorítmica", genre: "Algorítmica", vibe: "Mixes", bpm: "Dinámico", audience: "Personal", desc: "Mixes de género y décadas basados en tu gusto.", link: "https://open.spotify.com/genre/made-for-x-hub"}
+        ];
+
+        let playlists = [];
+        let filteredPlaylists = [];
+        let visibleCount = 20;
+
+        function init() {
+            lucide.createIcons();
+            loadData();
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('spotify_db_v9');
+            if (stored) {
+                playlists = JSON.parse(stored);
+                // Si la BD es vieja y no tiene tipos, ofrecer upgrade
+                if (playlists.length > 0 && !playlists[0].type) {
+                     if(confirm("Base de datos antigua detectada. ¿Actualizar estructura?")) {
+                         playlists = [...fullInitialData];
+                         saveData();
+                     }
+                }
+                showToast("Base de datos cargada");
+            } else {
+                playlists = [...fullInitialData];
+                saveData();
+            }
+            renderApp();
+        }
+
+        function saveData() {
+            localStorage.setItem('spotify_db_v9', JSON.stringify(playlists));
+        }
+
+        function resetDatabase() {
+            if(confirm("¿Restaurar la lista original? Se perderán las ediciones.")) {
+                playlists = [...fullInitialData];
+                saveData();
+                renderApp();
+                showToast("Restauración completa");
+            }
+        }
+
+        function renderApp() {
+            populateDropdowns();
+            filterPlaylists();
+        }
+
+        function populateDropdowns() {
+            const types = new Set();
+            const genres = new Set();
+            const audiences = new Set();
+            const vibes = new Set();
+            
+            document.getElementById('typeFilter').innerHTML = '<option value="">Todos</option>';
+            document.getElementById('genreFilter').innerHTML = '<option value="">Todos</option>';
+            document.getElementById('audienceFilter').innerHTML = '<option value="">Todos</option>';
+            document.getElementById('vibeFilter').innerHTML = '<option value="">Todos</option>';
+
+            playlists.forEach(p => {
+                if(p.type) types.add(p.type);
+                if(p.genre) genres.add(p.genre);
+                if(p.audience) audiences.add(p.audience);
+                if(p.vibe) vibes.add(p.vibe);
+            });
+
+            const addOptions = (set, id) => {
+                Array.from(set).sort().forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item; opt.textContent = item;
+                    document.getElementById(id).appendChild(opt);
+                });
+            };
+            addOptions(types, 'typeFilter');
+            addOptions(genres, 'genreFilter');
+            addOptions(audiences, 'audienceFilter');
+            addOptions(vibes, 'vibeFilter');
+        }
+
+        function filterPlaylists() {
+            const sText = document.getElementById('searchInput').value.toLowerCase();
+            const sType = document.getElementById('typeFilter').value;
+            const sGenre = document.getElementById('genreFilter').value;
+            const sAudience = document.getElementById('audienceFilter').value;
+            const sVibe = document.getElementById('vibeFilter').value;
+
+            filteredPlaylists = playlists.filter(p => {
+                const matchesSearch = (p.name||"").toLowerCase().includes(sText) || (p.desc||"").toLowerCase().includes(sText);
+                const matchesType = sType === "" || p.type === sType;
+                const matchesGenre = sGenre === "" || p.genre === sGenre;
+                const matchesAudience = sAudience === "" || p.audience === sAudience;
+                const matchesVibe = sVibe === "" || p.vibe === sVibe;
+                return matchesSearch && matchesType && matchesGenre && matchesAudience && matchesVibe;
+            });
+
+            visibleCount = 20; 
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            
+            const toShow = filteredPlaylists.slice(0, visibleCount);
+            
+            if (toShow.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#666;padding:40px;">No hay resultados</div>`;
+                document.getElementById('loadMoreBtn').style.display = 'none';
+                return;
+            }
+
+            toShow.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `card type-${p.type}`; 
+                
+                const appLink = p.link;
+                
+                card.innerHTML = `
+                    <div class="type-indicator"></div>
+                    <span class="type-badge" style="color:${getColorForType(p.type)}">${p.type || 'Manual'}</span>
+                    
+                    <div class="card-header">
+                        <h3 class="card-title">${p.name}</h3>
+                        <div class="card-actions">
+                            <button class="btn-icon edit" onclick="openModal('${p.id}')" title="Editar"><i data-lucide="pencil" style="width:16px"></i></button>
+                            <button class="btn-icon delete" onclick="deletePlaylist('${p.id}')" title="Eliminar"><i data-lucide="x" style="width:16px"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="badges">
+                        <span class="badge genre">${p.genre}</span>
+                        <span class="badge bpm">⚡ ${p.bpm}</span>
+                        <span class="badge vibe">${p.vibe}</span>
+                    </div>
+                    
+                    <p class="card-desc">${p.desc}</p>
+                    
+                    <div class="card-footer">
+                        <a href="${appLink}" target="_blank" class="btn-open">
+                            <i data-lucide="play-circle" style="width:18px"></i> ABRIR
+                        </a>
+                        <button class="btn-copy" onclick="copyToClipboard('${p.link}')" title="Copiar Enlace Web">
+                            <i data-lucide="copy" style="width:16px"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            const btn = document.getElementById('loadMoreBtn');
+            btn.style.display = visibleCount >= filteredPlaylists.length ? 'none' : 'inline-block';
+            document.getElementById('statsBar').innerHTML = `Mostrando ${toShow.length} de ${filteredPlaylists.length} playlists`;
+            lucide.createIcons();
+        }
+
+        function getColorForType(type) {
+            if(type === 'Editorial') return 'var(--type-editorial)';
+            if(type === 'Algorítmica') return 'var(--type-algo)';
+            if(type === 'Data-Driven') return 'var(--type-data)';
+            return 'var(--type-manual)';
+        }
+
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                showToast(successful ? "Enlace web copiado" : "No se pudo copiar");
+            } catch (err) {
+                showToast("Error al copiar");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function loadMore() {
+            visibleCount += 20;
+            renderGrid();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('genreFilter').value = '';
+            document.getElementById('audienceFilter').value = '';
+            document.getElementById('vibeFilter').value = '';
+            filterPlaylists();
+        }
+
+        function exportToCSV() {
+            if (!playlists || playlists.length === 0) {
+                alert("No hay datos para exportar");
+                return;
+            }
+            let csvLines = ["ID,Nombre,Tipo,Genero,Vibe,BPM,Publico,Descripcion,Link"];
+            playlists.forEach(p => {
+                const safeDesc = `"${(p.desc || "").replace(/"/g, '""')}"`;
+                const safeName = `"${(p.name || "").replace(/"/g, '""')}"`;
+                const row = `${p.id},${safeName},${p.type || 'Manual'},${p.genre},${p.vibe},${p.bpm},${p.audience},${safeDesc},${p.link}`;
+                csvLines.push(row);
+            });
+            const csvContent = csvLines.join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "spotify_manager_v9.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function deletePlaylist(id) {
+            if(confirm("¿Eliminar?")) {
+                playlists = playlists.filter(p => p.id !== id);
+                saveData();
+                filterPlaylists();
+                showToast("Eliminada");
+            }
+        }
+
+        function openModal(id = null) {
+            const modal = document.getElementById('addModal');
+            const form = document.getElementById('addForm');
+            const title = document.getElementById('modalTitle');
+
+            if (id) {
+                // MODO EDICIÓN
+                const p = playlists.find(item => item.id === id);
+                if (!p) return;
+
+                form.editId.value = p.id;
+                form.name.value = p.name;
+                form.type.value = p.type;
+                form.genre.value = p.genre;
+                form.vibe.value = p.vibe;
+                form.bpm.value = p.bpm;
+                form.audience.value = p.audience;
+                form.desc.value = p.desc;
+                form.link.value = p.link;
+
+                title.textContent = "Editar Playlist";
+            } else {
+                // MODO AGREGAR
+                form.reset();
+                form.editId.value = "";
+                title.textContent = "Agregar Playlist";
+            }
+            modal.classList.add('open');
+        }
+        
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const f = e.target;
+            const editId = f.editId.value;
+            
+            let safeLink = f.link.value.trim();
+            if (!safeLink.startsWith('http')) safeLink = 'https://' + safeLink;
+
+            const playlistData = {
+                name: f.name.value,
+                type: f.type.value || "Manual",
+                genre: f.genre.value,
+                vibe: f.vibe.value,
+                bpm: f.bpm.value || "",
+                audience: f.audience.value || "",
+                desc: f.desc.value || "",
+                link: safeLink
+            };
+
+            if (editId) {
+                // ACTUALIZAR
+                const index = playlists.findIndex(p => p.id === editId);
+                if (index !== -1) {
+                    playlists[index] = { ...playlists[index], ...playlistData };
+                    showToast("Playlist actualizada");
+                }
+            } else {
+                // CREAR NUEVA
+                playlists.unshift({
+                    id: "MAN-" + Date.now(),
+                    ...playlistData
+                });
+                showToast("Playlist agregada");
+            }
+
+            saveData();
+            filterPlaylists();
+            document.getElementById('addModal').classList.remove('open');
+            f.reset();
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const lines = e.target.result.split('\n');
+                let added = 0;
+                for(let i=1; i<lines.length; i++) {
+                    if(lines[i].trim() === '') continue;
+                    const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    if(matches && matches.length >= 5) {
+                        const clean = matches.map(m => m.replace(/^"|"$/g, '').replace(/""/g, '"'));
+                        let importLink = clean[8] || "";
+                        if (importLink && !importLink.startsWith('http')) importLink = 'https://' + importLink;
+
+                        const exists = playlists.some(p => p.id === clean[0] || p.link === importLink);
+                        if(!exists) {
+                            playlists.push({
+                                id: clean[0] || "IMP-"+Date.now(), name: clean[1],
+                                type: clean[2] || "Manual",
+                                genre: clean[3], vibe: clean[4], bpm: clean[5],
+                                audience: clean[6], desc: clean[7], link: importLink
+                            });
+                            added++;
+                        }
+                    }
+                }
+                saveData();
+                filterPlaylists();
+                alert(`Importación completada. Se añadieron ${added} nuevas playlists.`);
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById("toast");
+            t.textContent = msg; t.className = "show";
+            setTimeout(() => t.className = "", 3000);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterPlaylists);
+        ['typeFilter','genreFilter','audienceFilter','vibeFilter'].forEach(id => {
+            document.getElementById(id).addEventListener('change', filterPlaylists);
+        });
+
+        init();
+    </script>
+</body>
+</html>
